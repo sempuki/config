@@ -142,7 +142,7 @@ case "$OS" in
 esac
 
 # Work
-export PATH=${HOME}/bin:${HOME}/.local/bin:/opt/homebrew/bin:${PATH}
+export PATH=${HOME}/.local/bin:/opt/homebrew/bin:${PATH}
 export GLOG_logtostderr=1
 export GLOG_alsologtostderr=1
 export GLOG_stderrthreshold=0
