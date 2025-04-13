@@ -4,7 +4,7 @@ configure: bash-config git-config vim-config neovim-config tmux-config ctags-con
 
 install-scripts:
 	mkdir -p ~/.local/bin
-	cp ../scripts/* ~/.local/bin
+	cp scripts/* ~/.local/bin
 
 bash-config:
 	cp bashrc ~/.bashrc
