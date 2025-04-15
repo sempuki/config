@@ -95,7 +95,7 @@ if [ -d /usr/share/git-core/contrib/completion ]; then
       source git-prompt.sh
       has_git_ps1=true
   fi
-  cd -
+  cd - > /dev/null
 fi
 
 ## Ubuntu
@@ -147,4 +147,3 @@ export GLOG_logtostderr=1
 export GLOG_alsologtostderr=1
 export GLOG_stderrthreshold=0
 export GLOG_minloglevel=0
-source "${HOME}/.cargo/env"
