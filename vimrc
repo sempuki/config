@@ -128,10 +128,10 @@ nnoremap <silent> <C-a> :FSHere<CR>
 set path=.,,./tests,src,include,/usr/include/,/usr/include/c++/src
 
 " Jump to BUILD
-nnoremap <silent> <Leader><Leader>b :edit %:h/BUILD<CR>
+nnoremap <silent> <Leader><Leader>b :find BUILD*<CR>
 
 " Jump to test
-nnoremap <silent> <Leader><Leader>u :find %:t:r_test.cc<CR>
+nnoremap <silent> <Leader><Leader>u :find %:t:r_test<CR>
 
 " Ctag searching
 nnoremap <Leader>t :tjump<Space>
@@ -203,16 +203,14 @@ let g:syntastic_auto_loc_list = 2 " close location-list when empty
 let g:fsnonewfiles = 1
 augroup FSwitchExtensions
   autocmd!
-  " autocmd BufEnter *.h let b:fswitchdst = 'cc'
-  " autocmd BufEnter *.h let b:fswitchlocs = 'reg:/include/src/,reg:/include.*/src/,../src'
   autocmd BufEnter *.hh let b:fswitchdst = 'cc'
-  autocmd BufEnter *.hh let b:fswitchlocs = 'reg:/include/src/,reg:/include.*/src/,../src'
+  autocmd BufEnter *.hh let b:fswitchlocs = 'reg:/include/src/,reg:/include.*/src/,../src,impl'
   autocmd BufEnter *.cc let b:fswitchdst = 'hh,h'
-  autocmd BufEnter *.cc let b:fswitchlocs = 'reg:/src/include/,reg:|src|include/**|,../include'
+  autocmd BufEnter *.cc let b:fswitchlocs = 'reg:/src/include/,reg:|src|include/**|,../include,../'
   autocmd BufEnter *.hpp let b:fswitchdst = 'cpp'
-  autocmd BufEnter *.hpp let b:fswitchlocs = 'reg:/include/src/,reg:/include.*/src/,../src'
+  autocmd BufEnter *.hpp let b:fswitchlocs = 'reg:/include/src/,reg:/include.*/src/,../src,impl'
   autocmd BufEnter *.cpp let b:fswitchdst = 'hpp'
-  autocmd BufEnter *.cpp let b:fswitchlocs = 'reg:/src/include/,reg:|src|include/**|,../include'
+  autocmd BufEnter *.cpp let b:fswitchlocs = 'reg:/src/include/,reg:|src|include/**|,../include,../'
 augroup END
 
 " Configure using FileType (instead of extension; FileType < BufEnter/Leave)
