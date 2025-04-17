@@ -8,7 +8,7 @@ filetype off
 call plug#begin()
 Plug 'chrisbra/matchit'
 Plug 'derekwyatt/vim-fswitch'
-Plug 'vim-scripts/gtags'
+Plug 'vim-scripts/gtags.vim'
 Plug 'tpope/vim-fugitive'
 Plug 'tpope/vim-rhubarb'
 Plug 'bfrg/vim-cpp-modern'
@@ -18,10 +18,6 @@ Plug 'easymotion/vim-easymotion'
 Plug 'haya14busa/is.vim'
 Plug 'mileszs/ack.vim'
 call plug#end()
-" :PluginList           - list configured plugins
-" :PluginInstall(!)     - install (update) plugins
-" :PluginSearch(!) foo  - search (or refresh cache first) for foo
-" :PluginClean(!)       - confirm (or auto-approve) removal of unused plugins
 
 filetype plugin indent on   " autoguess by file extension
 set nocompatible            " use VIM settings
@@ -342,14 +338,3 @@ map <Leader><Leader>l <Plug>(easymotion-overwin-line)
 map <Leader><Leader>w <Plug>(easymotion-overwin-w)
 map <Leader><Leader>f <Plug>(easymotion-overwin-f)
 
-" incsearch.vim x fuzzy x vim-easymotion
-function! s:config_easyfuzzymotion(...) abort
-  return extend(copy({
-        \   'converters': [incsearch#config#fuzzyword#converter()],
-        \   'modules': [incsearch#config#easymotion#module({'overwin': 1})],
-        \   'keymap': {"\<CR>": '<Over>(easymotion)'},
-        \   'is_expr': 0,
-        \   'is_stay': 0
-        \ }), get(a:, 1, {}))
-endfunction
-noremap <silent><expr> <Leader><Leader>/ incsearch#go(<SID>config_easyfuzzymotion())
