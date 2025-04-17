@@ -3,28 +3,21 @@
 colorscheme slatemine
 set termguicolors " Always use a 265 color terminal.
 
-" Set up vundle
+" Set up vim-plug
 filetype off
-set rtp+=~/.vim/bundle/Vundle.vim
-call vundle#begin()
-Plugin 'VundleVim/Vundle.vim'
-Plugin 'FSwitch'
-Plugin 'gtags.vim'
-Plugin 'matchit.zip'
-Plugin 'OmniCppComplete'
-Plugin 'tpope/vim-fugitive'
-Plugin 'tpope/vim-rhubarb'
-Plugin 'bfrg/vim-cpp-modern'
-Plugin 'rhysd/vim-clang-format'
-Plugin 'vim-syntastic/syntastic'
-Plugin 'easymotion/vim-easymotion'
-Plugin 'haya14busa/incsearch.vim'
-Plugin 'haya14busa/incsearch-fuzzy.vim'
-Plugin 'haya14busa/incsearch-easymotion.vim'
-Plugin 'editorconfig/editorconfig-vim'
-Plugin 'skywind3000/asyncrun.vim'
-Plugin 'mileszs/ack.vim'
-call vundle#end()
+call plug#begin()
+Plug 'chrisbra/matchit'
+Plug 'derekwyatt/vim-fswitch'
+Plug 'vim-scripts/gtags'
+Plug 'tpope/vim-fugitive'
+Plug 'tpope/vim-rhubarb'
+Plug 'bfrg/vim-cpp-modern'
+Plug 'rhysd/vim-clang-format'
+Plug 'vim-syntastic/syntastic'
+Plug 'easymotion/vim-easymotion'
+Plug 'haya14busa/is.vim'
+Plug 'mileszs/ack.vim'
+call plug#end()
 " :PluginList           - list configured plugins
 " :PluginInstall(!)     - install (update) plugins
 " :PluginSearch(!) foo  - search (or refresh cache first) for foo
@@ -153,17 +146,9 @@ nnoremap <C-g> :Ack <C-R><C-W> %:h
 nnoremap <Leader><Leader>m :make %:r \|cwindow<CR>
 nnoremap <Leader><Leader>r :!./%:r <CR>
 
-" Async compile in current directory
-nnoremap <Leader><Leader>cc :AsyncRun
-      \ c++ -Wall -g ${CXXFLAGS} "$(VIM_FILEPATH)" -o "$(VIM_FILENOEXT)"
-      \ && lldb -b -o run -k bt ./"$(VIM_FILENOEXT)"<CR>
-
 " vim-cpp-modern Syntax highlighting
 let g:cpp_attributes_highlight = 1  " Enable highlighting of C++11 attributes
 let g:cpp_member_highlight = 1      " Highlight struct/class member variables
-
-" Automatically open quickfix window and set to 6 lines height
-let g:asyncrun_open = 10
 
 " Auto Clang Format
 "let g:clang_format#command = 'clang-format-3.6'
@@ -302,12 +287,6 @@ nnoremap <silent> <Leader>Gg :!find .
       \ env GTAGSFORCECPP=1 
       \ gtags -f-
       \<CR>
-
-" C++ OmniCppComplete
-set completeopt=menu,longest
-let OmniCpp_ShowPrototypeInAbbr = 1 "show function parameters
-let OmniCpp_DefaultNamespaces = ["std", "_GLIBCXX_STD"]
-imap <C-O> <C-X><C-O>
 
 " Avoid searching boost headers on complete
 set include=^\\s*#\\s*include.*\\(boost\\)\\@!

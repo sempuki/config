@@ -19,8 +19,7 @@ git-config:
 
 vim-config: install-scripts
 	cp vimrc ~/.vimrc
-	rm -rf ~/.vim/bundle/Vundle.vim && mkdir -m 755 -p ~/.vim/bundle
-	git clone https://github.com/gmarik/Vundle.vim.git ~/.vim/bundle/Vundle.vim
+	curl -fLo ~/.vim/autoload/plug.vim --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
 	cp -a vim/* ~/.vim
 
 neovim-config:
