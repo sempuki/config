@@ -1,6 +1,6 @@
 [user]
     name = Ryan McDougall
-	email = ryanm@applied.co
+    email = sempuki1@gmail.com
 [alias]
     bl = blame
     br = branch -v --sort=-committerdate
@@ -61,15 +61,13 @@
 [mergetool]
     prompt = false
 [mergetool "vimdiff"]
-	cmd = nvim -f -c "Gdiffsplit!" "$MERGED"
+    cmd = nvim -f -c "Gdiffsplit!" "$MERGED"
 [commit]
     template=~/.gitmessage
 [rebase]
     instructionFormat = %s [%an]
 [filter "lfs"]
-	clean = git-lfs clean -- %f
-	smudge = git-lfs smudge -- %f
-	process = git-lfs filter-process
-	required = true
-[blame]
-	ignoreRevsFile = .git-blame-ignore-revs
+    clean = git-lfs clean -- %f
+    smudge = git-lfs smudge -- %f
+    process = git-lfs filter-process
+    required = true
