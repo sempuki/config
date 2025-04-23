@@ -15,7 +15,6 @@ Plug 'bfrg/vim-cpp-modern'
 Plug 'rhysd/vim-clang-format'
 Plug 'vim-syntastic/syntastic'
 Plug 'easymotion/vim-easymotion'
-Plug 'haya14busa/is.vim'
 Plug 'mileszs/ack.vim'
 call plug#end()
 
