@@ -4,10 +4,10 @@
 [alias]
     bl = blame
     br = branch -v --sort=-committerdate
+    co = checkout
+    cl = clone
     ci = commit
     cam = commit --amend -CHEAD
-    cl = clone
-    co = checkout
     df = diff
     fe = fetch
     fm = fetch origin main
@@ -20,17 +20,9 @@
     rb = rebase
     rbs = rebase --autostash
     rbm = rebase origin/main
+    res = restore --staged
     st = status
     sh = stash
-[apply]
-    whitespace = strip
-[diff]
-    color = auto
-    rename = copy
-[pager]
-    color = true 
-[status]
-    color = auto
 [color]
     branch = auto
     diff = auto
@@ -52,20 +44,29 @@
     excludesfile = ~/.gitignore
     #autocrlf = true                # used in Windows
     autocrlf = input                # used in Unix
-[push]
-    default = simple
 [credential]
     helper = cache --timeout=3600
+[apply]
+    whitespace = strip
+[commit]
+    template=~/.gitmessage
+[diff]
+    color = auto
+    rename = copy
 [merge]
     tool = vimdiff
 [mergetool]
     prompt = false
 [mergetool "vimdiff"]
     cmd = nvim -f -c "Gdiffsplit!" "$MERGED"
-[commit]
-    template=~/.gitmessage
+[pager]
+    color = true
+[push]
+    default = simple
 [rebase]
     instructionFormat = %s [%an]
+[status]
+    color = auto
 [filter "lfs"]
     clean = git-lfs clean -- %f
     smudge = git-lfs smudge -- %f
