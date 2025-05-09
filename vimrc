@@ -119,7 +119,7 @@ set path=.,,./tests,src,include,/usr/include/,/usr/include/c++/src
 nnoremap <silent> <Leader><Leader>b :find BUILD*<CR>
 
 " Jump to test
-nnoremap <silent> <Leader><Leader>u :find %:t:r_test<CR>
+nnoremap <silent> <Leader><Leader>u :find %:t:r_test.%:e<CR>
 
 " Ctag searching
 nnoremap <Leader>t :tjump<Space>
@@ -147,7 +147,7 @@ let g:cpp_member_highlight = 1      " Highlight struct/class member variables
 
 " Auto Clang Format
 "let g:clang_format#command = 'clang-format-3.6'
-let g:clang_format#detect_style_files = 1 " use .clang-format
+let g:clang_format#detect_style_file = 1  " use .clang-format
 let g:clang_format#auto_format = 0        " format on write (default to off)
 let g:clang_format#auto_formatexpr = 1    " format on gq
 
