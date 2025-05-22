@@ -68,6 +68,9 @@ function f() {
 function fn() {
     ${FIND_COMMAND} . -name "$@" | ${GREP_COMMAND} "${1//\*/[^/]*}" # glob->regex
 }
+function fl() {
+    ${FIND_COMMAND} -L . -name "$@" | ${GREP_COMMAND} "${1//\*/[^/]*}" # glob->regex
+}
 function ll() {
     ${LS_COMMAND} "$@"
 }
