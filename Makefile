@@ -1,6 +1,6 @@
 all: install-scripts configure
 
-configure: bash-config git-config vim-config neovim-config tmux-config ctags-config clang-format-config ack-config input-config
+configure: bash-config git-config vim-config neovim-config tmux-config ctags-config clang-format-config ack-config input-config qt-config
 
 install-scripts:
 	mkdir -p ~/.local/bin
@@ -38,3 +38,6 @@ ack-config:
 
 input-config:
 	cp inputrc ~/.inputrc
+
+qt-config:
+	sudo cp qt6ct.sh /etc/profile.d/
