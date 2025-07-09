@@ -24,7 +24,7 @@ let colors_name = "slate-mine"
 :hi Search          guifg=Wheat       guibg=Peru                cterm=none ctermfg=Grey ctermbg=Blue
 :hi SpecialKey      guifg=YellowGreen                           ctermfg=DarkGreen
 :hi StatusLine      guifg=Black       guibg=#c2bfa5   gui=bold  cterm=bold,reverse
-:hi StatusLineNC    guifg=Grey40      guibg=#c2bfa5             cterm=reverse
+:hi StatusLineNC    guifg=Grey30      guibg=#c2bfa5             cterm=reverse
 :hi Title           guifg=Gold                                  cterm=bold ctermfg=Yellow
 :hi Visual          guifg=Khaki       guibg=OliveDrab           cterm=reverse
 :hi Directory                                                   ctermfg=DarkCyan
