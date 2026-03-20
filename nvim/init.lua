@@ -1,15 +1,22 @@
 -- init.lua -- Ryan McDougall (modern Neovim 0.11)
 --
 -- Plugin replacements:
+--   chrisbra/matchit         → built-in (Neovim default)
 --   vim-scripts/gtags.vim    → native LSP + Telescope (go-to-ref, symbols)
 --   bfrg/vim-cpp-modern      → nvim-treesitter (syntax highlighting)
+--   vim-syntastic/syntastic  → native LSP diagnostics
 --   rhysd/vim-clang-format   → conform.nvim (formatting)
 --   easymotion/vim-easymotion→ flash.nvim (defaults)
+--   mileszs/ack.vim          → Telescope live_grep (ripgrep)
+--   neovim/nvim-lspconfig    → native vim.lsp.config + lsp/*.lua files
+--   ctags generation         → LSP handles symbols natively
 --
 -- Kept as-is:
 --   tpope/vim-fugitive       → still the best Git plugin
 --   tpope/vim-rhubarb        → GitHub integration for fugitive
 --   derekwyatt/vim-fswitch   → no clearly better Lua alternative
+--
+-- LSP server configs are defined inline via vim.lsp.config()
 --
 -- Neovim 0.11 default LSP keymaps (no config needed):
 --   grn  → vim.lsp.buf.rename()
@@ -47,13 +54,16 @@ vim.opt.rtp:prepend(lazypath)
 require("lazy").setup({
 
   ---- Git ----
+
   { "tpope/vim-fugitive" },
   { "tpope/vim-rhubarb" },
 
   ---- Header/source switching ----
+
   { "derekwyatt/vim-fswitch" },
 
   ---- Treesitter (replaces vim-cpp-modern and all syntax plugins) ----
+
   {
     "nvim-treesitter/nvim-treesitter",
     lazy = false,
@@ -77,6 +87,7 @@ require("lazy").setup({
   },
 
   ---- Autocompletion ----
+
   {
     "hrsh7th/nvim-cmp",
     dependencies = {
@@ -104,6 +115,7 @@ require("lazy").setup({
   },
 
   ---- Formatting (replaces vim-clang-format) ----
+
   {
     "stevearc/conform.nvim",
     config = function()
@@ -128,6 +140,7 @@ require("lazy").setup({
   },
 
   ---- Telescope (replaces ack.vim, gtags grep) ----
+
   {
     "nvim-telescope/telescope.nvim",
     branch = "master",
@@ -148,7 +161,27 @@ require("lazy").setup({
     end,
   },
 
+  ---- Claude Code (IDE integration) ----
+
+  {
+    "coder/claudecode.nvim",
+    dependencies = { "folke/snacks.nvim" },
+    lazy = false, -- must load eagerly to start the WebSocket server
+    opts = {},
+    keys = {
+      { "<Leader>ac", "<cmd>ClaudeCode<cr>", desc = "Toggle Claude" },
+      { "<Leader>af", "<cmd>ClaudeCodeFocus<cr>", desc = "Focus Claude" },
+      { "<Leader>ar", "<cmd>ClaudeCode --resume<cr>", desc = "Resume Claude" },
+      { "<Leader>aC", "<cmd>ClaudeCode --continue<cr>", desc = "Continue Claude" },
+      { "<Leader>ab", "<cmd>ClaudeCodeAdd %<cr>", desc = "Add current buffer" },
+      { "<Leader>as", "<cmd>ClaudeCodeSend<cr>", mode = "v", desc = "Send to Claude" },
+      { "<Leader>aa", "<cmd>ClaudeCodeDiffAccept<cr>", desc = "Accept diff" },
+      { "<Leader>ad", "<cmd>ClaudeCodeDiffDeny<cr>", desc = "Deny diff" },
+    },
+  },
+
   ---- Flash (replaces easymotion) ----
+
   {
     "folke/flash.nvim",
     event = "VeryLazy",
@@ -242,9 +275,10 @@ for _, rule in ipairs(fswitch_rules) do
 end
 
 -------------------------------------------------------------------------------
--- Native LSP setup (Neovim 0.11 — no nvim-lspconfig plugin needed)
+-- Native LSP setup (Neovim 0.11)
 --
--- Server configs are in ~/.config/nvim/lsp/*.lua
+-- Server configs live in ~/.config/nvim/lsp/*.lua
+-- Each file must return a plain table (NOT call vim.lsp.config).
 -- Neovim auto-discovers them by filename.
 -------------------------------------------------------------------------------
 
@@ -282,6 +316,9 @@ vim.api.nvim_create_autocmd("LspAttach", {
     local buf = ev.buf
     local opts = { buffer = buf }
     local telescope = require("telescope.builtin")
+
+    -- Ensure tagfunc uses LSP (makes :tjump work via LSP)
+    vim.bo[buf].tagfunc = "v:lua.vim.lsp.tagfunc"
 
     -- Go-to-definition (replaces ctag <Leader>t / tjump)
     vim.keymap.set("n", "gd", telescope.lsp_definitions, opts)
