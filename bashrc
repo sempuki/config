@@ -136,6 +136,7 @@ case "$OS" in
     export CLICOLOR=true
     export LSCOLORS=ExFxBxDxCxegedabagacad
     export LS_COMMAND='ls -lGF'
+    export BASH_SILENCE_DEPRECATION_WARNING=1
     ;;
   "MSYS_NT-10.0")
     export FIND_COMMAND='/usr/bin/find' # MS's find is grep
