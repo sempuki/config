@@ -1,6 +1,6 @@
 all: install-scripts configure
 
-configure: bash-config git-config vim-config neovim-config tmux-config ctags-config clang-format-config ack-config input-config qt-config
+configure: bash-config git-config neovim-config tmux-config ctags-config clang-format-config ack-config input-config qt-config
 
 install-scripts:
 	mkdir -p ~/.local/bin
@@ -22,9 +22,12 @@ vim-config: install-scripts
 	curl -fLo ~/.vim/autoload/plug.vim --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
 	cp -a vim/* ~/.vim
 
-neovim-config:
-	ln -sf ~/.vim ~/.config/nvim 
-	ln -sf ~/.vimrc ~/.config/nvim/init.vim
+neovim-config: install-scripts
+	mkdir -p ~/.config/nvim/
+	cp -a vim/* ~/.config/nvim/
+	cp -a nvim/* ~/.config/nvim/
+	# ln -sf ~/.vim ~/.config/nvim
+	# ln -sf ~/.vimrc ~/.config/nvim/init.vim
 
 clang-format-config:
 	cp clang-format ~/.clang-format
