@@ -53,6 +53,10 @@ vim.opt.rtp:prepend(lazypath)
 
 require("lazy").setup({
 
+  ---- UI (vim.ui.select / vim.ui.input backend) ----
+
+  { "stevearc/dressing.nvim", opts = {} },
+
   ---- Git ----
 
   { "tpope/vim-fugitive" },
