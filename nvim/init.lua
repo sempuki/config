@@ -212,6 +212,7 @@ vim.opt.guioptions:remove({ "t", "T" })
 vim.opt.errorbells = false
 vim.opt.visualbell = true
 vim.opt.signcolumn = "yes"
+vim.opt.tags = { "cpp.tags", "py.tags", "rs.tags", "tags" }
 
 -- Rounded borders on all floating windows (hover, diagnostics, etc.)
 vim.o.winborder = "rounded"
@@ -271,6 +272,7 @@ end
 
 vim.lsp.enable({ "clangd", "rust_analyzer", "lua_ls" })
 
+
 -------------------------------------------------------------------------------
 -- LSP Diagnostics appearance
 -------------------------------------------------------------------------------
@@ -304,12 +306,6 @@ vim.api.nvim_create_autocmd("LspAttach", {
     local opts = { buffer = buf }
     local telescope = require("telescope.builtin")
 
-    -- Ensure tagfunc uses LSP (makes :tjump work via LSP)
-    vim.bo[buf].tagfunc = "v:lua.vim.lsp.tagfunc"
-
-    -- Go-to-definition (replaces ctag <Leader>t / tjump)
-    vim.keymap.set("n", "gd", telescope.lsp_definitions, opts)
-
     -- References via Telescope (enhances built-in grr with fuzzy picker)
     vim.keymap.set("n", "<Leader>r", telescope.lsp_references, opts)
 
@@ -336,6 +332,14 @@ vim.api.nvim_create_autocmd("LspAttach", {
 -------------------------------------------------------------------------------
 
 local map = vim.keymap.set
+
+-- Jump to symbol by name (uses ctags)
+map("n", "<Leader>t", ":tjump ")
+
+-- Generate ctags (per-language tag files)
+map("n", "<Leader>G+", ":!ctags -R -f cpp.tags --languages=C,C++ --c++-kinds=+p --fields-c++=+{properties} --fields=+aiS<CR>")
+map("n", "<Leader>Gpy", ":!ctags -R -f py.tags --languages=Python --python-kinds=-i --fields=+aiS<CR>")
+map("n", "<Leader>Grs", ":!ctags -R -f rs.tags --languages=Rust --fields=+aiS<CR>")
 
 -- Save buffer
 map("n", "<Leader>w", "<Esc><C-c>:w<CR>", { silent = true })
@@ -412,9 +416,6 @@ map("n", "<Leader><Leader>b", ":find BUILD*<CR>", { silent = true })
 -- Jump to test file
 map("n", "<Leader><Leader>u", ":find %:t:r_test.%:e<CR>", { silent = true })
 
--- Ctag jumping (kept as fallback alongside LSP gd)
-map("n", "<Leader>t", ":tjump ")
-
 -------------------------------------------------------------------------------
 -- Keymaps -- Telescope (replaces ack.vim, extends searching)
 -------------------------------------------------------------------------------
@@ -423,18 +424,16 @@ local telescope_builtin = function(name)
   return function() require("telescope.builtin")[name]() end
 end
 
--- Replaces <C-g> :Ack (grep word under cursor)
-map("n", "<C-g>", function()
-  require("telescope.builtin").grep_string()
-end)
+-- Grep word under cursor
+map("n", "<C-g>", telescope_builtin("grep_string"))
 
--- Live grep (replaces :Ack for freeform searching)
+-- Live grep
 map("n", "<Leader><Leader>g", telescope_builtin("live_grep"))
 
 -- Find files
 map("n", "<Leader><Leader>f", telescope_builtin("find_files"))
 
--- Buffers (enhances <Leader>b)
+-- Find Buffers
 map("n", "<Leader><Leader>e", telescope_builtin("buffers"))
 
 -- Search+replace word under cursor (kept from original)
