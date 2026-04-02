@@ -387,7 +387,16 @@ map("n", "<C-c>", "<C-c>:nohl<CR>", { silent = true })
 
 -- Ergonomic escape
 map({ "n", "v", "o" }, "<C-e>", "<Esc>")
-map({ "i", "c" }, "<C-e>", "<C-c>")
+map({ "i", "s" }, "<C-e>", "<C-c>")
+map("c", "<C-e>", "<C-c>")
+
+-- Stop snippet sessions on any exit to normal mode (Esc, C-c, C-e, etc.)
+vim.api.nvim_create_autocmd("ModeChanged", {
+  pattern = { "s:n", "i:n" },
+  callback = function()
+    if vim.snippet.active() then vim.snippet.stop() end
+  end,
+})
 
 -- Ergonomic centering
 map("n", "<Home>", "zz")
