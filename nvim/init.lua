@@ -237,8 +237,6 @@ vim.opt.tabstop = 2
 vim.opt.softtabstop = 2
 vim.opt.shiftwidth = 2
 vim.opt.expandtab = true
-vim.opt.smarttab = true
-vim.opt.cindent = true
 vim.opt.cinoptions = ":0,g0,N-s"
 vim.opt.ruler = true
 vim.opt.number = true
@@ -246,7 +244,6 @@ vim.opt.hlsearch = true
 vim.opt.wildmode = { "longest", "full" }
 vim.opt.scrolloff = 5
 vim.opt.matchpairs:append("<:>")
-vim.opt.guioptions:remove({ "t", "T" })
 vim.opt.errorbells = false
 vim.opt.visualbell = true
 vim.opt.signcolumn = "yes"
@@ -338,24 +335,22 @@ vim.diagnostic.config({
 -- We add a few extras and wire Telescope into some of them.
 -------------------------------------------------------------------------------
 
+local telescope_lsp = require("telescope.builtin")
+
 vim.api.nvim_create_autocmd("LspAttach", {
   callback = function(ev)
     local buf = ev.buf
     local opts = { buffer = buf }
-    local telescope = require("telescope.builtin")
 
     -- References via Telescope (enhances built-in grr with fuzzy picker)
-    vim.keymap.set("n", "<Leader>r", telescope.lsp_references, opts)
+    vim.keymap.set("n", "<Leader>r", telescope_lsp.lsp_references, opts)
 
     -- Document symbols via Telescope (replaces Gtags -f %)
-    vim.keymap.set("n", "<Leader>f", telescope.lsp_document_symbols, opts)
+    vim.keymap.set("n", "<Leader>f", telescope_lsp.lsp_document_symbols, opts)
 
     -- Workspace symbols (replaces Gtags -g for global search)
-    vim.keymap.set("n", "<Leader>g", telescope.lsp_workspace_symbols, opts)
+    vim.keymap.set("n", "<Leader>g", telescope_lsp.lsp_workspace_symbols, opts)
 
-    -- Diagnostics navigation (replaces syntastic loc-list jumping)
-    vim.keymap.set("n", "]d", vim.diagnostic.goto_next, opts)
-    vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, opts)
     vim.keymap.set("n", "<Leader>d", vim.diagnostic.open_float, opts)
 
     -- Format on request (replaces = → gq clang-format mapping)
@@ -387,8 +382,7 @@ map("n", "<C-c>", "<C-c>:nohl<CR>", { silent = true })
 
 -- Ergonomic escape
 map({ "n", "v", "o" }, "<C-e>", "<Esc>")
-map({ "i", "s" }, "<C-e>", "<C-c>")
-map("c", "<C-e>", "<C-c>")
+map({ "i", "s", "c" }, "<C-e>", "<C-c>")
 
 -- Stop snippet sessions on any exit to normal mode (Esc, C-c, C-e, etc.)
 vim.api.nvim_create_autocmd("ModeChanged", {
