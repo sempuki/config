@@ -418,7 +418,7 @@ map("n", "<C-a>", ":FSHere<CR>", { silent = true })
 map("n", "<Leader><Leader>b", ":find BUILD*<CR>", { silent = true })
 
 -- Jump to test file
-map("n", "<Leader><Leader>u", ":find %:t:r_test.%:e<CR>", { silent = true })
+map("n", "<Leader><Leader>u", ":find %:t:r_unit_test")
 
 -------------------------------------------------------------------------------
 -- Keymaps -- Telescope (replaces ack.vim, extends searching)
@@ -441,7 +441,7 @@ map("n", "<Leader><Leader>f", telescope_builtin("find_files"))
 map("n", "<Leader><Leader>e", telescope_builtin("buffers"))
 
 -- Search+replace word under cursor (kept from original)
-map("n", "<Leader>s", [[:%s/\<<C-r><C-w>\>//gc<Left><Left><Left>]])
+map("n", "<Leader>s", [[:.,$s/\<<C-r><C-w>\>//gc<Left><Left><Left>]])
 
 -------------------------------------------------------------------------------
 -- Keymaps -- Hex editing
