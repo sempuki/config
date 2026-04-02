@@ -193,6 +193,40 @@ require("lazy").setup({
 vim.cmd.colorscheme("slatemine")
 vim.opt.termguicolors = true
 
+-- Dim and desaturate diagnostic virtual text so clang-tidy noise is less obtrusive.
+local function mute_highlight_color(name, dim, desat)
+    local hl = vim.api.nvim_get_hl(0, { name = name, link = false })
+    if not hl.fg then return end
+    local r, g, b = math.floor(hl.fg / 65536), math.floor(hl.fg / 256) % 256, hl.fg % 256
+    -- Desaturate: blend toward perceptual gray.
+    local gray = 0.299 * r + 0.587 * g + 0.114 * b
+    r = r + (gray - r) * desat
+    g = g + (gray - g) * desat
+    b = b + (gray - b) * desat
+    -- Dim: scale toward black, but only if the color is bright enough.
+    local lum = 0.299 * r + 0.587 * g + 0.114 * b
+    if lum > 60 then
+        r = r * (1 - dim)
+        g = g * (1 - dim)
+        b = b * (1 - dim)
+    end
+    r = math.floor(r)
+    g = math.floor(g)
+    b = math.floor(b)
+    hl.fg = r * 65536 + g * 256 + b
+    hl.link = nil
+    vim.api.nvim_set_hl(0, name, hl)
+end
+
+for _, name in ipairs({
+    "DiagnosticVirtualTextError",
+    "DiagnosticVirtualTextWarn",
+    "DiagnosticVirtualTextInfo",
+    "DiagnosticVirtualTextHint",
+}) do
+    mute_highlight_color(name, 0.5, 0.1)
+end
+
 -------------------------------------------------------------------------------
 -- Options
 -------------------------------------------------------------------------------
@@ -415,7 +449,7 @@ map("n", "<C-j>", "O<Esc>j")
 map("n", "<C-a>", ":FSHere<CR>", { silent = true })
 
 -- Jump to BUILD file
-map("n", "<Leader><Leader>b", ":find BUILD*<CR>", { silent = true })
+map("n", "<Leader><Leader>z", ":find BUILD*<CR>", { silent = true })
 
 -- Jump to test file
 map("n", "<Leader><Leader>u", ":find %:t:r_unit_test")
@@ -438,7 +472,7 @@ map("n", "<Leader><Leader>g", telescope_builtin("live_grep"))
 map("n", "<Leader><Leader>f", telescope_builtin("find_files"))
 
 -- Find Buffers
-map("n", "<Leader><Leader>e", telescope_builtin("buffers"))
+map("n", "<Leader><Leader>b", telescope_builtin("buffers"))
 
 -- Search+replace word under cursor (kept from original)
 map("n", "<Leader>s", [[:.,$s/\<<C-r><C-w>\>//gc<Left><Left><Left>]])
