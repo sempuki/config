@@ -321,46 +321,6 @@ vim.diagnostic.config({
 })
 
 -------------------------------------------------------------------------------
--- LSP Keymaps (on attach)
---
--- Neovim 0.11 provides these defaults automatically:
---   K    → hover
---   grn  → rename
---   gra  → code action
---   grr  → references
---   gri  → implementation
---   gO   → document symbols
---   C-s  → signature help (insert mode)
---
--- We add a few extras and wire Telescope into some of them.
--------------------------------------------------------------------------------
-
-local telescope_lsp = require("telescope.builtin")
-
-vim.api.nvim_create_autocmd("LspAttach", {
-  callback = function(ev)
-    local buf = ev.buf
-    local opts = { buffer = buf }
-
-    -- References via Telescope (enhances built-in grr with fuzzy picker)
-    vim.keymap.set("n", "<Leader>r", telescope_lsp.lsp_references, opts)
-
-    -- Document symbols via Telescope (replaces Gtags -f %)
-    vim.keymap.set("n", "<Leader>f", telescope_lsp.lsp_document_symbols, opts)
-
-    -- Workspace symbols (replaces Gtags -g for global search)
-    vim.keymap.set("n", "<Leader>g", telescope_lsp.lsp_workspace_symbols, opts)
-
-    vim.keymap.set("n", "<Leader>d", vim.diagnostic.open_float, opts)
-
-    -- Format on request (replaces = → gq clang-format mapping)
-    vim.keymap.set({ "n", "v" }, "=", function()
-      require("conform").format({ bufnr = buf })
-    end, opts)
-  end,
-})
-
--------------------------------------------------------------------------------
 -- Keymaps -- General
 -------------------------------------------------------------------------------
 
@@ -466,7 +426,7 @@ local telescope_builtin = function(name)
 end
 
 -- Grep word under cursor
-map("n", "<C-g>", telescope_builtin("grep_string"))
+map("n", "<Leader>g", telescope_builtin("grep_string"))
 
 -- Live grep
 map("n", "<Leader><Leader>g", telescope_builtin("live_grep"))
@@ -476,6 +436,28 @@ map("n", "<Leader><Leader>f", telescope_builtin("find_files"))
 
 -- Find Buffers
 map("n", "<Leader><Leader>b", telescope_builtin("buffers"))
+
+-- References via Telescope (enhances built-in grr with fuzzy picker)
+map("n", "<Leader>r", telescope_builtin("lsp_references"))
+
+-- Document symbols via Telescope (replaces Gtags -f %)
+map("n", "<Leader>f", telescope_builtin("lsp_document_symbols"))
+
+-- Format on request (replaces = → gq clang-format mapping)
+map({ "n", "v" }, "=", function()
+  require("conform").format({ bufnr = 0 })
+end)
+
+-------------------------------------------------------------------------------
+-- LSP Keymaps (on attach)
+-------------------------------------------------------------------------------
+
+vim.api.nvim_create_autocmd("LspAttach", {
+  callback = function(ev)
+    local opts = { buffer = ev.buf }
+    vim.keymap.set("n", "<Leader>d", vim.diagnostic.open_float, opts)
+  end,
+})
 
 -- Search+replace word under cursor (kept from original)
 map("n", "<Leader>s", [[:.,$s/\<<C-r><C-w>\>//gc<Left><Left><Left>]])
