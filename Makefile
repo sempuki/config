@@ -1,14 +1,11 @@
-.PHONY: all configure provision install-scripts bash-config tmux-config \
-        git-config neovim-config clang-format-config ctags-config \
-        input-config qt-config
+.PHONY: all configure provision install-scripts bash-config profile-config \
+        tmux-config git-config ssh-config neovim-config clang-format-config \
+        ctags-config input-config qt-config github-identity github-keys
 
 all: install-scripts configure
 
-configure: bash-config git-config neovim-config tmux-config ctags-config clang-format-config input-config qt-config
+configure: bash-config profile-config git-config ssh-config neovim-config tmux-config ctags-config clang-format-config input-config qt-config
 
-# Provisioning is deliberately NOT part of `all`: it needs network + sudo and
-# is slow, whereas `configure` stays fast and offline. Run it explicitly on a
-# fresh box. All platform-specific knowledge lives in provision.sh.
 provision:
 	chmod 755 provision.sh
 	./provision.sh
@@ -20,6 +17,9 @@ install-scripts:
 bash-config:
 	cp bashrc ~/.bashrc
 
+profile-config:
+	cp profile ~/.profile
+
 tmux-config:
 	cp tmux.conf ~/.tmux.conf
 
@@ -28,7 +28,7 @@ git-config:
 	cp gitignore ~/.gitignore
 
 neovim-config: install-scripts
-	mkdir -p ~/.config/nvim/
+	mkdir -p ~/.config/nvim
 	cp -a nvim/* ~/.config/nvim/
 
 clang-format-config:
@@ -49,3 +49,15 @@ qt-config:
 	else \
 		echo "qt-config: skipped (qt6ct is Linux-only)"; \
 	fi
+
+ssh-config: ssh-keys
+	mkdir -p ~/.ssh
+	cp -a ssh/* ~/.ssh/
+	chmod 700 ~/.ssh ~/.ssh/config.d
+	chmod 600 ~/.ssh/config ~/.ssh/config.d/*.config
+
+ssh-keys:
+	@test -f ~/.ssh/id_ed25519_self || ssh-keygen -t ed25519 -C self -f ~/.ssh/id_ed25519_self
+	@test -f ~/.ssh/id_ed25519_work || ssh-keygen -t ed25519 -C work -f ~/.ssh/id_ed25519_work
+	@echo "-- self --: "; cat ~/.ssh/id_ed25519_self.pub
+	@echo "-- work --: "; cat ~/.ssh/id_ed25519_work.pub
