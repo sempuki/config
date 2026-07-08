@@ -1,6 +1,17 @@
+.PHONY: all configure provision install-scripts bash-config tmux-config \
+        git-config neovim-config clang-format-config ctags-config \
+        input-config qt-config
+
 all: install-scripts configure
 
-configure: bash-config git-config neovim-config tmux-config ctags-config clang-format-config ack-config input-config qt-config
+configure: bash-config git-config neovim-config tmux-config ctags-config clang-format-config input-config qt-config
+
+# Provisioning is deliberately NOT part of `all`: it needs network + sudo and
+# is slow, whereas `configure` stays fast and offline. Run it explicitly on a
+# fresh box. All platform-specific knowledge lives in provision.sh.
+provision:
+	chmod 755 provision.sh
+	./provision.sh
 
 install-scripts:
 	mkdir -p ~/.local/bin
@@ -8,7 +19,6 @@ install-scripts:
 
 bash-config:
 	cp bashrc ~/.bashrc
-	-source ~/.bashrc
 
 tmux-config:
 	cp tmux.conf ~/.tmux.conf
@@ -17,17 +27,9 @@ git-config:
 	cp gitconfig ~/.gitconfig
 	cp gitignore ~/.gitignore
 
-vim-config: install-scripts
-	cp vimrc ~/.vimrc
-	curl -fLo ~/.vim/autoload/plug.vim --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
-	cp -a vim/* ~/.vim
-
 neovim-config: install-scripts
 	mkdir -p ~/.config/nvim/
-	cp -a vim/* ~/.config/nvim/
 	cp -a nvim/* ~/.config/nvim/
-	# ln -sf ~/.vim ~/.config/nvim
-	# ln -sf ~/.vimrc ~/.config/nvim/init.vim
 
 clang-format-config:
 	cp clang-format ~/.clang-format
@@ -36,11 +38,14 @@ ctags-config:
 	mkdir -p ~/.ctags.d
 	cp ctags ~/.ctags.d/default.ctags
 
-ack-config:
-	cp ackrc ~/.ackrc
-
 input-config:
 	cp inputrc ~/.inputrc
 
+# qt6ct sets QT_QPA_PLATFORMTHEME for Qt theming -- Linux desktop only.
+# On macOS (no /etc/profile.d, native Cocoa theme) this is a no-op.
 qt-config:
-	sudo cp qt6ct.sh /etc/profile.d/
+	@if [ "$$(uname -s)" = Linux ]; then \
+		sudo cp qt6ct.sh /etc/profile.d/; \
+	else \
+		echo "qt-config: skipped (qt6ct is Linux-only)"; \
+	fi

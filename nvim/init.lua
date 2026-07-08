@@ -130,7 +130,6 @@ require("lazy").setup({
           cpp = { "clang-format" },
           proto = { "clang-format" },
           rust = { "rustfmt" },
-          lua = { "stylua" },
         },
       })
 
@@ -305,7 +304,7 @@ end
 -- Neovim auto-discovers them by filename.
 -------------------------------------------------------------------------------
 
-vim.lsp.enable({ "clangd", "rust_analyzer", "lua_ls" })
+vim.lsp.enable({ "clangd", "rust_analyzer" })
 
 
 -------------------------------------------------------------------------------
