@@ -74,15 +74,15 @@ install_system() {
     apt)
       sudo apt-get update
       sudo apt-get install -y \
-        tmux neovim universal-ctags ripgrep fd-find git curl make \
-        clang clang-format clangd
+        tmux neovim universal-ctags ripgrep fd-find git curl make cmake \
+        bash-completion clang clang-format clangd
       # Debian ships fd as 'fdfind'; Telescope expects 'fd'.
       if have fdfind && ! have fd; then ln -sf "$(command -v fdfind)" "$BIN/fd"; fi
       ;;
     dnf)
       sudo dnf install -y \
-        tmux neovim ctags ripgrep fd-find git curl make \
-        clang clang-tools-extra
+        tmux neovim ctags ripgrep fd-find git curl make cmake \
+        bash-completion clang clang-tools-extra
       ;;
   esac
 }
@@ -132,13 +132,41 @@ install_treesitter_cli() {
 }
 
 # ---------------------------------------------------------------------------
+# BAND 2c -- tmux-mem-cpu-load (CPU%/mem/load for the tmux status bar). In brew
+# on macOS; not packaged for apt/dnf, so built from source on Linux, pinned to a
+# release tag and installed into ~/.local (no sudo). cmake is in the package
+# lists above; clang + make are already there.
+# ---------------------------------------------------------------------------
+TMCL_TAG=v3.8.3
+
+install_tmux_mem_cpu_load() {
+  if have tmux-mem-cpu-load; then log "tmux-mem-cpu-load present"; return; fi
+  if [ "$PM" = brew ]; then
+    brew install tmux-mem-cpu-load
+    return
+  fi
+  have cmake || { warn "cmake missing; cannot build tmux-mem-cpu-load"; return; }
+  log "building tmux-mem-cpu-load $TMCL_TAG from source"
+  local tmp; tmp="$(mktemp -d)"
+  if git clone --depth 1 --branch "$TMCL_TAG" https://github.com/thewtex/tmux-mem-cpu-load.git "$tmp/src" >/dev/null 2>&1 \
+     && cmake -S "$tmp/src" -B "$tmp/build" -DCMAKE_INSTALL_PREFIX="$HOME/.local" >/dev/null \
+     && cmake --build "$tmp/build" >/dev/null \
+     && cmake --install "$tmp/build" >/dev/null; then
+    log "tmux-mem-cpu-load installed to $BIN"
+  else
+    warn "tmux-mem-cpu-load build failed"
+  fi
+  rm -rf "$tmp"
+}
+
+# ---------------------------------------------------------------------------
 # Doctor -- report what actually landed on PATH (verifies parity across hosts).
 # ---------------------------------------------------------------------------
 doctor() {
   log "verifying tools:"
   local ok=1
   for t in tmux nvim clangd clang-format ctags rg fd git curl make \
-           rust-analyzer rustfmt tree-sitter; do
+           rust-analyzer rustfmt tree-sitter tmux-mem-cpu-load; do
     if have "$t"; then
       printf '  \033[1;32m ok \033[0m %-20s %s\n' "$t" "$(command -v "$t")"
     else
@@ -153,6 +181,7 @@ main() {
   install_system
   install_rust_tools
   install_treesitter_cli
+  install_tmux_mem_cpu_load
   doctor
   log "done."
 }
