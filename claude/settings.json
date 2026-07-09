@@ -1,0 +1,7 @@
+{
+  "theme": "dark",
+  "spinnerVerbs": {
+    "mode": "replace",
+    "verbs": ["Working"]
+  }
+}

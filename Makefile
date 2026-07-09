@@ -1,10 +1,10 @@
 .PHONY: all configure provision install-scripts bash-config profile-config \
         tmux-config git-config ssh-config neovim-config clang-format-config \
-        ctags-config input-config qt-config github-identity github-keys
+        ctags-config input-config qt-config claude-config github-identity github-keys
 
 all: install-scripts configure
 
-configure: bash-config profile-config git-config ssh-config neovim-config tmux-config ctags-config clang-format-config input-config qt-config
+configure: bash-config profile-config git-config ssh-config neovim-config tmux-config ctags-config clang-format-config input-config qt-config claude-config
 
 provision:
 	chmod 755 provision.sh
@@ -40,6 +40,10 @@ ctags-config:
 
 input-config:
 	cp inputrc ~/.inputrc
+
+claude-config:
+	mkdir -p ~/.claude
+	cp claude/* ~/.claude/
 
 # qt6ct sets QT_QPA_PLATFORMTHEME for Qt theming -- Linux desktop only.
 # On macOS (no /etc/profile.d, native Cocoa theme) this is a no-op.
