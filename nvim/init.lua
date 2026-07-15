@@ -150,18 +150,18 @@ require("lazy").setup({
     branch = "master",
     dependencies = {
       "nvim-lua/plenary.nvim",
-      { "nvim-telescope/telescope-fzf-native.nvim", build = "make" },
     },
+    -- NOTE: telescope-fzf-native (compiled C sorter) is intentionally omitted:
+    -- app-allowlisting (ThreatLocker on managed machines) blocks dlopen of its
+    -- libfzf.so. Telescope's built-in Lua sorter is used instead.
     config = function()
-      local telescope = require("telescope")
-      telescope.setup({
+      require("telescope").setup({
         defaults = {
           layout_strategy = "horizontal",
           layout_config = { prompt_position = "top" },
           sorting_strategy = "ascending",
         },
       })
-      telescope.load_extension("fzf")
     end,
   },
 

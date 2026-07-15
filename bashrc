@@ -121,11 +121,6 @@ fi
 if [ -r "/opt/homebrew/etc/profile.d/bash_completion.sh" ]; then
   source "/opt/homebrew/etc/profile.d/bash_completion.sh"
 fi
-if [ -f "/opt/homebrew/opt/bash-git-prompt/share/gitprompt.sh" ]; then
-  GIT_PROMPT_ONLY_IN_REPO=1
-  __GIT_PROMPT_DIR="/opt/homebrew/opt/bash-git-prompt/share"
-  source "/opt/homebrew/opt/bash-git-prompt/share/gitprompt.sh"
-fi
 
 # Per-OS Options
 OS=`uname -s`
