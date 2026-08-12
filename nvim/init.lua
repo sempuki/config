@@ -51,6 +51,11 @@ vim.opt.rtp:prepend(lazypath)
 -- Plugins
 -------------------------------------------------------------------------------
 
+-- nvim-treesitter compiles every parser Neovim does not bundle, and an
+-- application-allowlisting agent will not load a library built on the machine.
+-- Probe for the agent: it is a property of the host, not of the platform.
+local ts_can_build = not vim.uv.fs_stat("/Library/Application Support/ThreatLocker")
+
 require("lazy").setup({
 
   ---- UI (vim.ui.select / vim.ui.input backend) ----
@@ -71,17 +76,25 @@ require("lazy").setup({
   {
     "nvim-treesitter/nvim-treesitter",
     lazy = false,
-    build = ":TSUpdate",
+    build = ts_can_build and ":TSUpdate" or nil,
     config = function()
       require("nvim-treesitter").setup({})
-      -- Install parsers (no-op if already installed)
-      require("nvim-treesitter").install({
-        "c", "cpp", "rust",
-        "lua", "proto", "json", "yaml", "bash", "markdown", "markdown_inline",
-      })
+
+      -- Filetypes whose parser Neovim bundles, so they highlight anywhere.
+      local filetypes = { "c", "lua", "markdown", "query", "vim" }
+
+      if ts_can_build then
+        -- Install parsers (no-op if already installed)
+        require("nvim-treesitter").install({
+          "c", "cpp", "rust",
+          "lua", "proto", "json", "yaml", "bash", "markdown", "markdown_inline",
+        })
+        vim.list_extend(filetypes, { "cpp", "rust", "proto", "json", "yaml", "bash" })
+      end
+
       -- Enable treesitter highlighting + indentation on file open
       vim.api.nvim_create_autocmd("FileType", {
-        pattern = { "c", "cpp", "rust", "lua", "proto", "json", "yaml", "bash", "markdown" },
+        pattern = filetypes,
         callback = function(ev)
           pcall(vim.treesitter.start, ev.buf)
           vim.bo[ev.buf].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
@@ -131,6 +144,10 @@ require("lazy").setup({
           proto = { "clang-format" },
           rust = { "rustfmt" },
         },
+
+        -- Format through the language server when no formatter is configured
+        -- or its command is missing.
+        default_format_opts = { lsp_format = "fallback" },
       })
 
       -- Format on save for C/C++/proto/rust
@@ -247,6 +264,44 @@ vim.opt.errorbells = false
 vim.opt.visualbell = true
 vim.opt.signcolumn = "yes"
 vim.opt.tags = { "cpp.tags", "py.tags", "rs.tags", "tags" }
+
+-- Column at which prose and comments hard-wrap.
+vim.opt.textwidth = 100
+
+-- What `gq` runs. Return 0 to mean handled, 1 to fall back to Vim's fill.
+-- A formatter or language server gets the range. With neither, prose is filled
+-- to 'textwidth' and source left alone -- conform cannot make that call, since
+-- its formatexpr reports success whether or not it ran anything.
+local prose_filetypes = {
+  asciidoc = true,
+  gitcommit = true,
+  mail = true,
+  markdown = true,
+  rst = true,
+  text = true,
+}
+
+function _G.reflow_formatexpr()
+  local conform = require("conform")
+  local formatters, lsp = conform.list_formatters_to_run(0)
+  if lsp or not vim.tbl_isempty(formatters) then
+    return conform.formatexpr()
+  end
+  return prose_filetypes[vim.bo.filetype] and 1 or 0
+end
+
+vim.opt.formatexpr = "v:lua.reflow_formatexpr()"
+
+-- 'formatoptions' `t` auto-wraps body text at 'textwidth' as it is typed, which
+-- breaks a source line mid-statement. Off by default so a filetype only wraps
+-- body text where its ftplugin asks for it, as Markdown's does; these two
+-- inherit the option rather than setting it.
+vim.opt.formatoptions:remove("t")
+
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = { "gitcommit", "text" },
+  callback = function() vim.opt_local.formatoptions:append("t") end,
+})
 
 -- Rounded borders on all floating windows (hover, diagnostics, etc.)
 vim.o.winborder = "rounded"
@@ -442,10 +497,13 @@ map("n", "<Leader>r", telescope_builtin("lsp_references"))
 -- Document symbols via Telescope (replaces Gtags -f %)
 map("n", "<Leader>f", telescope_builtin("lsp_document_symbols"))
 
--- Format on request (replaces = → gq clang-format mapping)
-map({ "n", "v" }, "=", function()
-  require("conform").format({ bufnr = 0 })
-end)
+-- Reflow operator. `=` takes a motion (`=ip`, `=G`, `=` over a visual
+-- selection); `==` reflows one line. Both run `gq`, which routes through
+-- 'formatexpr' to the buffer's configured formatter, or to Vim's internal
+-- wrapping where there is none. `gw` stays internal-only, since it ignores
+-- 'formatexpr' by definition.
+map({ "n", "v" }, "=", "gq")
+map("n", "==", "gqq")
 
 -------------------------------------------------------------------------------
 -- LSP Keymaps (on attach)
