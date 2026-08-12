@@ -268,10 +268,6 @@ vim.opt.tags = { "cpp.tags", "py.tags", "rs.tags", "tags" }
 -- Column at which prose and comments hard-wrap.
 vim.opt.textwidth = 100
 
--- What `gq` runs. Return 0 to mean handled, 1 to fall back to Vim's fill.
--- A formatter or language server gets the range. With neither, prose is filled
--- to 'textwidth' and source left alone -- conform cannot make that call, since
--- its formatexpr reports success whether or not it ran anything.
 local prose_filetypes = {
   asciidoc = true,
   gitcommit = true,
@@ -281,6 +277,10 @@ local prose_filetypes = {
   text = true,
 }
 
+-- Reflow with `gq`. Return 0 to mean handled, 1 to fall back to Vim's fill.
+-- A formatter or language server gets the range. With neither, prose is filled
+-- to 'textwidth' and source left alone -- conform cannot make that call, since
+-- its formatexpr reports success whether or not it ran anything.
 function _G.reflow_formatexpr()
   local conform = require("conform")
   local formatters, lsp = conform.list_formatters_to_run(0)
@@ -293,11 +293,8 @@ end
 vim.opt.formatexpr = "v:lua.reflow_formatexpr()"
 
 -- 'formatoptions' `t` auto-wraps body text at 'textwidth' as it is typed, which
--- breaks a source line mid-statement. Off by default so a filetype only wraps
--- body text where its ftplugin asks for it, as Markdown's does; these two
--- inherit the option rather than setting it.
+-- breaks a source line mid-statement. Off by default unless a filetype asks.
 vim.opt.formatoptions:remove("t")
-
 vim.api.nvim_create_autocmd("FileType", {
   pattern = { "gitcommit", "text" },
   callback = function() vim.opt_local.formatoptions:append("t") end,
