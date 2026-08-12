@@ -3,6 +3,14 @@ if [ -f /etc/bashrc ]; then
     source /etc/bashrc
 fi
 
+# A non-login shell never reads ~/.profile, where the environment is set.
+# Testing PATH rather than a flag keeps a shell that inherited it from redoing
+# the work, and ~/.profile sources this file back only for a login shell.
+case ":${PATH}:" in
+    *":${HOME}/.local/bin:"*) ;;
+    *) [ -f "${HOME}/.profile" ] && source "${HOME}/.profile" ;;
+esac
+
 # Only configure interactive shells.
 case $- in
     *i*) ;;
@@ -141,7 +149,6 @@ case "$OS" in
 esac
 
 # Work
-export PATH=${HOME}/.local/bin:/opt/homebrew/bin:${PATH}
 export GLOG_logtostderr=1
 export GLOG_alsologtostderr=1
 export GLOG_stderrthreshold=0
