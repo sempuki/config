@@ -61,7 +61,7 @@ install_system() {
       have brew || die "install Homebrew first: https://brew.sh"
       xcode-select -p >/dev/null 2>&1 || { log "installing Xcode CLT (clang)"; xcode-select --install || true; }
       # bash: macOS is frozen at a GPLv2-era 3.2; install a modern 5.x.
-      brew install bash bash-completion@2 tmux neovim universal-ctags llvm ripgrep fd git curl make
+      brew install bash bash-completion@2 tmux neovim universal-ctags llvm ripgrep fd git curl make bazelisk
       # llvm is keg-only; expose clangd + clang-format on PATH for the LSP/formatter.
       local llvmbin; llvmbin="$(brew --prefix llvm)/bin"
       for b in clangd clang-format; do
