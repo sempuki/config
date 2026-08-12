@@ -1,7 +1,10 @@
 {
-  "theme": "dark",
+  "model": "opus[1m]",
   "spinnerVerbs": {
     "mode": "replace",
-    "verbs": ["Working"]
-  }
+    "verbs": [
+      "Working"
+    ]
+  },
+  "theme": "dark"
 }
