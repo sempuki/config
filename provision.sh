@@ -10,6 +10,10 @@
 #           platform-specific surface (see install_system()).
 #   Band 2  the rust toolchain (rust-analyzer, rustfmt, clippy), installed via
 #           rustup, which behaves identically on every OS.
+#   Band 3  tools no package manager carries: tree-sitter, tmux-mem-cpu-load.
+#
+# A distribution that cannot supply the rest is the wrong distribution. This
+# script reports what is missing rather than working around it.
 #
 # Supported: macOS (brew), Debian/Ubuntu (apt), Fedora/RHEL (dnf).
 # Safe to re-run.
@@ -20,6 +24,9 @@ log()  { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33mWARN:\033[0m %s\n' "$*" >&2; }
 die()  { printf '\033[1;31mERROR:\033[0m %s\n' "$*" >&2; exit 1; }
 have() { command -v "$1" >/dev/null 2>&1; }
+# $BIN joins PATH only at the next login, so anything placed there this run is
+# invisible to `have`. Guard the fetchers with this instead.
+installed() { have "$1" || [ -x "$BIN/$1" ]; }
 
 BIN="$HOME/.local/bin"
 mkdir -p "$BIN"
@@ -46,6 +53,30 @@ detect_package_manager() {
 PM="$(detect_package_manager)"
 log "platform: $(uname -s) / $(uname -m)  ->  package manager: $PM"
 
+# Install packages, tolerating ones this distribution does not carry. A single
+# absent package must not abort provisioning: the batch is tried first, and on
+# failure each package is attempted alone so the rest still land. What is
+# missing is named at the end, and again by doctor.
+install_packages() {
+  local mgr="$1"; shift
+  local failed=() p
+  case "$mgr" in
+    apt) if sudo apt-get install -y "$@"; then return 0; fi ;;
+    dnf) if sudo dnf install -y "$@"; then return 0; fi ;;
+  esac
+  warn "batch install failed; retrying one package at a time"
+  for p in "$@"; do
+    case "$mgr" in
+      apt) if ! sudo apt-get install -y "$p" >/dev/null 2>&1; then failed+=("$p"); fi ;;
+      dnf) if ! sudo dnf install -y "$p" >/dev/null 2>&1; then failed+=("$p"); fi ;;
+    esac
+  done
+  if [ ${#failed[@]} -gt 0 ]; then
+    warn "not available from $mgr: ${failed[*]}"
+    warn "install these another way if you need them (see doctor's output below)"
+  fi
+}
+
 # ---------------------------------------------------------------------------
 # BAND 1 -- system package manager.
 # The three package lists below are the *only* platform-specific knowledge.
@@ -61,25 +92,25 @@ install_system() {
       have brew || die "install Homebrew first: https://brew.sh"
       xcode-select -p >/dev/null 2>&1 || { log "installing Xcode CLT (clang)"; xcode-select --install || true; }
       # bash: macOS is frozen at a GPLv2-era 3.2; install a modern 5.x.
-      brew install bash bash-completion@2 tmux neovim universal-ctags llvm ripgrep fd git curl make bazelisk
+      brew install bash bash-completion@2 tmux neovim universal-ctags llvm ripgrep fd git curl make bazelisk gh
       # llvm is keg-only; expose clangd + clang-format on PATH for the LSP/formatter.
       local llvmbin; llvmbin="$(brew --prefix llvm)/bin"
       for b in clangd clang-format; do
-        [ -x "$llvmbin/$b" ] && ln -sf "$llvmbin/$b" "$BIN/$b"
+        if [ -x "$llvmbin/$b" ]; then ln -sf "$llvmbin/$b" "$BIN/$b"; fi
       done
       ;;
     apt)
       sudo apt-get update
-      sudo apt-get install -y \
+      install_packages apt \
         tmux neovim universal-ctags ripgrep fd-find git curl make cmake \
-        bash-completion clang clang-format clangd
+        bash-completion clang clang-format clangd python3 gh
       # Debian ships fd as 'fdfind'; Telescope expects 'fd'.
       if have fdfind && ! have fd; then ln -sf "$(command -v fdfind)" "$BIN/fd"; fi
       ;;
     dnf)
-      sudo dnf install -y \
+      install_packages dnf \
         tmux neovim ctags ripgrep fd-find git curl make cmake \
-        bash-completion clang clang-tools-extra
+        bash-completion clang clang-tools-extra python3 gh
       ;;
   esac
 }
@@ -94,37 +125,34 @@ install_rust_tools() {
     curl -fsSL https://sh.rustup.rs | sh -s -- -y --no-modify-path
   fi
   # shellcheck disable=SC1091
-  [ -r "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
+  if [ -r "$HOME/.cargo/env" ]; then . "$HOME/.cargo/env"; fi
   rustup component add rust-analyzer rustfmt clippy || warn "rustup component add failed"
 }
 
 # ---------------------------------------------------------------------------
-# BAND 2b -- tree-sitter CLI (nvim-treesitter's main branch compiles parsers
-# with it). Install from the system package manager like everything else --
-# signed, verified, and updated by the OS. Debian/Ubuntu *stable* can ship a
-# version older than the plugin wants; if so we say so plainly and let you
-# decide, rather than dropping an unmanaged binary onto the box.
+# BAND 3b -- tree-sitter CLI (nvim-treesitter's main branch compiles parsers
+# with it). Distributions lag the plugin by enough that the packaged CLI is
+# routinely too old, and the floor the plugin wants keeps moving, so track
+# upstream's latest rather than guessing a version.
 # ---------------------------------------------------------------------------
-TS_MIN=0.25   # nvim-treesitter main needs this floor (its README says 0.26.1)
-
 install_treesitter_cli() {
-  if ! have tree-sitter; then
-    case "$PM" in
-      brew) brew install tree-sitter-cli ;;
-      apt)  sudo apt-get install -y tree-sitter-cli ;;
-      dnf)  sudo dnf install -y tree-sitter-cli ;;
-    esac
-  fi
-  if ! have tree-sitter; then
-    warn "tree-sitter CLI unavailable from $PM; see the nvim-treesitter README to install it"
-    return
-  fi
-  local v; v="$(tree-sitter --version 2>/dev/null | awk '{print $2}')"
-  if printf '%s\n%s\n' "$TS_MIN" "$v" | sort -V -C 2>/dev/null; then
-    log "tree-sitter CLI $v (>= $TS_MIN)"
+  if installed tree-sitter; then log "tree-sitter present"; return; fi
+  if [ "$PM" = brew ]; then brew install tree-sitter-cli; return; fi
+  local arch
+  case "$(uname -m)" in
+    x86_64)        arch=x64 ;;
+    aarch64|arm64) arch=arm64 ;;
+    *) warn "no tree-sitter build for $(uname -m)"; return ;;
+  esac
+  log "installing latest tree-sitter ($arch)"
+  local url="https://github.com/tree-sitter/tree-sitter/releases/latest/download/tree-sitter-linux-$arch.gz"
+  if curl -fsSL "$url" | gzip -d > "$BIN/tree-sitter.part"; then
+    chmod +x "$BIN/tree-sitter.part"
+    mv "$BIN/tree-sitter.part" "$BIN/tree-sitter"
+    log "tree-sitter $("$BIN/tree-sitter" --version | awk '{print $2}') installed"
   else
-    warn "tree-sitter CLI $v is below the $TS_MIN nvim-treesitter needs."
-    warn "On Debian/Ubuntu stable: enable backports, move to a newer release, or 'cargo install tree-sitter-cli'."
+    warn "tree-sitter download failed: $url"
+    rm -f "$BIN/tree-sitter.part"
   fi
 }
 
@@ -137,7 +165,7 @@ install_treesitter_cli() {
 TMCL_TAG=v3.8.3
 
 install_tmux_mem_cpu_load() {
-  if have tmux-mem-cpu-load; then log "tmux-mem-cpu-load present"; return; fi
+  if installed tmux-mem-cpu-load; then log "tmux-mem-cpu-load present"; return; fi
   if [ "$PM" = brew ]; then
     brew install tmux-mem-cpu-load
     return
@@ -159,13 +187,18 @@ install_tmux_mem_cpu_load() {
 # ---------------------------------------------------------------------------
 # Doctor -- report what actually landed on PATH (verifies parity across hosts).
 # ---------------------------------------------------------------------------
+# On a first run ~/.local/bin did not exist when the shell started, so the
+# tools just installed there are absent from PATH until the next login. Look
+# in $BIN too, or every fresh box reports failures for what it just installed.
 doctor() {
   log "verifying tools:"
   local ok=1
-  for t in tmux nvim clangd clang-format ctags rg fd git curl make \
+  for t in tmux nvim clangd clang-format ctags rg fd git curl make python3 gh \
            rust-analyzer rustfmt tree-sitter tmux-mem-cpu-load; do
     if have "$t"; then
       printf '  \033[1;32m ok \033[0m %-20s %s\n' "$t" "$(command -v "$t")"
+    elif [ -x "$BIN/$t" ]; then
+      printf '  \033[1;32m ok \033[0m %-20s %s\n' "$t" "$BIN/$t (PATH after next login)"
     else
       printf '  \033[1;31mMISS\033[0m %-20s\n' "$t"; ok=0
     fi
