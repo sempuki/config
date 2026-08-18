@@ -184,6 +184,22 @@ install_tmux_mem_cpu_load() {
   rm -rf "$tmp"
 }
 
+# A tool that exists is not a tool that runs: a binary built for a newer
+# distribution fails in the dynamic loader, which reports the missing symbol
+# on stderr and exits 1 -- indistinguishable by status alone from a tool that
+# merely dislikes --version. Match what the loader says instead.
+report_tool() {
+  local name="$1" path="$2" suffix="$3" output
+  output="$("$path" --version 2>&1)"
+  case "$output" in
+    *"error while loading shared libraries"*|*"GLIBC_"*|*"cannot execute"*|*"not found (required by"*)
+      printf '  \033[1;31mBROKEN\033[0m %-18s %s\n' "$name" "$path"
+      printf '         %s\n' "$(printf '%s' "$output" | head -1)"
+      return 1 ;;
+  esac
+  printf '  \033[1;32m ok \033[0m %-20s %s%s\n' "$name" "$path" "$suffix"
+}
+
 # ---------------------------------------------------------------------------
 # Doctor -- report what actually landed on PATH (verifies parity across hosts).
 # ---------------------------------------------------------------------------
@@ -196,9 +212,9 @@ doctor() {
   for t in tmux nvim clangd clang-format ctags rg fd git curl make python3 gh \
            rust-analyzer rustfmt tree-sitter tmux-mem-cpu-load; do
     if have "$t"; then
-      printf '  \033[1;32m ok \033[0m %-20s %s\n' "$t" "$(command -v "$t")"
+      report_tool "$t" "$(command -v "$t")" "" || ok=0
     elif [ -x "$BIN/$t" ]; then
-      printf '  \033[1;32m ok \033[0m %-20s %s\n' "$t" "$BIN/$t (PATH after next login)"
+      report_tool "$t" "$BIN/$t" " (PATH after next login)" || ok=0
     else
       printf '  \033[1;31mMISS\033[0m %-20s\n' "$t"; ok=0
     fi
