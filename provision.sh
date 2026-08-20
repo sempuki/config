@@ -116,6 +116,31 @@ install_system() {
 }
 
 # ---------------------------------------------------------------------------
+# macOS only -- make the modern bash selectable. Apple's /bin/bash is frozen at
+# 3.2 and cannot be replaced, so Homebrew's 5.x installs alongside it; a
+# terminal still launching /bin/bash gets 3.2, where bash-completion@2 (bash 4+)
+# silently does nothing. chpass(1) refuses any shell absent from /etc/shells,
+# so register it here. Selecting it is left to the user: which shell greets you
+# at login is an account decision, not a provisioning one.
+# ---------------------------------------------------------------------------
+register_modern_bash() {
+  [ "$PM" = brew ] || return 0
+  local brewbash; brewbash="$(brew --prefix)/bin/bash"
+  if [ ! -x "$brewbash" ]; then warn "no Homebrew bash at $brewbash"; return 0; fi
+  if ! grep -qxF "$brewbash" /etc/shells 2>/dev/null; then
+    log "registering $brewbash in /etc/shells"
+    if ! printf '%s\n' "$brewbash" | sudo tee -a /etc/shells >/dev/null; then
+      warn "could not write /etc/shells; add $brewbash to it by hand"
+      return 0
+    fi
+  fi
+  local current; current="$(dscl . -read "/Users/$USER" UserShell 2>/dev/null | awk '{print $2}')"
+  if [ "$current" != "$brewbash" ]; then
+    log "login shell is ${current:-unknown}; to switch: chsh -s $brewbash"
+  fi
+}
+
+# ---------------------------------------------------------------------------
 # BAND 2a -- rust toolchain via rustup (uniform on every OS).
 # Provides rust-analyzer + rustfmt + clippy (your rust_analyzer.lua uses clippy).
 # ---------------------------------------------------------------------------
@@ -200,6 +225,22 @@ report_tool() {
   printf '  \033[1;32m ok \033[0m %-20s %s%s\n' "$name" "$path" "$suffix"
 }
 
+# bash is the one tool whose mere presence proves nothing: every macOS has one,
+# and it is the 3.2 that the dotfiles' completions cannot use. Report the
+# version, and treat a major below 4 as a failure rather than a pass.
+check_bash() {
+  local path major version
+  path="$(command -v bash)" || { printf '  \033[1;31mMISS\033[0m %-20s\n' bash; return 1; }
+  major="$("$path" -c 'echo "${BASH_VERSINFO[0]}"' 2>/dev/null || echo 0)"
+  version="$("$path" -c 'echo "$BASH_VERSION"' 2>/dev/null || echo unknown)"
+  if [ "$major" -ge 4 ]; then
+    printf '  \033[1;32m ok \033[0m %-20s %s (%s)\n' bash "$path" "$version"
+    return 0
+  fi
+  printf '  \033[1;31mOLD \033[0m %-20s %s is %s; completions need 4+\n' bash "$path" "$version"
+  return 1
+}
+
 # ---------------------------------------------------------------------------
 # Doctor -- report what actually landed on PATH (verifies parity across hosts).
 # ---------------------------------------------------------------------------
@@ -209,6 +250,7 @@ report_tool() {
 doctor() {
   log "verifying tools:"
   local ok=1
+  check_bash || ok=0
   for t in tmux nvim clangd clang-format ctags rg fd git curl make python3 gh \
            rust-analyzer rustfmt tree-sitter tmux-mem-cpu-load; do
     if have "$t"; then
@@ -225,6 +267,7 @@ doctor() {
 
 main() {
   install_system
+  register_modern_bash
   install_rust_tools
   install_treesitter_cli
   install_tmux_mem_cpu_load
