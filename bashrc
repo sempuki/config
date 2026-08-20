@@ -118,6 +118,12 @@ if [ -f /etc/bash_completion.d/git-prompt ]; then
     has_git_ps1=true
 fi
 
+## macOS (Homebrew)
+if [ -f /opt/homebrew/etc/bash_completion.d/git-prompt.sh ]; then
+    source /opt/homebrew/etc/bash_completion.d/git-prompt.sh
+    has_git_ps1=true
+fi
+
 if $has_git_ps1 ; then
   export GIT_PS1_SHOWCOLORHINTS=true
   export GIT_PS1_SHOWDIRTYSTATE=true
