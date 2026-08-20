@@ -93,6 +93,14 @@ set -o vi
 # Qt Applications
 export QT_QPA_PLATFORMTHEME=qt6ct # install and run qt6ct to set themes
 
+# Homebrew lives under /opt/homebrew on Apple silicon and /usr/local on Intel,
+# and nowhere at all on a machine without it. Resolve the prefix once -- brew
+# --prefix costs ~20ms, and both the git prompt and the completions want it.
+brew_prefix=""
+if command -v brew > /dev/null 2>&1; then
+    brew_prefix=$(brew --prefix)
+fi
+
 # Git integration
 has_git_ps1=false
 
@@ -118,9 +126,9 @@ if [ -f /etc/bash_completion.d/git-prompt ]; then
     has_git_ps1=true
 fi
 
-## macOS (Homebrew)
-if [ -f /opt/homebrew/etc/bash_completion.d/git-prompt.sh ]; then
-    source /opt/homebrew/etc/bash_completion.d/git-prompt.sh
+## Homebrew
+if [ -n "${brew_prefix}" ] && [ -f "${brew_prefix}/etc/bash_completion.d/git-prompt.sh" ]; then
+    source "${brew_prefix}/etc/bash_completion.d/git-prompt.sh"
     has_git_ps1=true
 fi
 
@@ -132,9 +140,10 @@ if $has_git_ps1 ; then
 fi
 
 ## Homebrew
-if [ -r "/opt/homebrew/etc/profile.d/bash_completion.sh" ]; then
-  source "/opt/homebrew/etc/profile.d/bash_completion.sh"
+if [ -n "${brew_prefix}" ] && [ -r "${brew_prefix}/etc/profile.d/bash_completion.sh" ]; then
+  source "${brew_prefix}/etc/profile.d/bash_completion.sh"
 fi
+unset brew_prefix
 
 # Per-OS Options
 OS=`uname -s`
