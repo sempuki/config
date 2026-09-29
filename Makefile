@@ -4,7 +4,7 @@
 
 all: install-scripts configure
 
-configure: bash-config profile-config git-config ssh-config neovim-config tmux-config ctags-config clang-format-config input-config qt-config claude-config
+configure: bash-config profile-config git-config neovim-config tmux-config ctags-config clang-format-config input-config qt-config claude-config
 
 provision:
 	chmod 755 provision.sh
