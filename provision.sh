@@ -10,7 +10,8 @@
 #           platform-specific surface (see install_system()).
 #   Band 2  the rust toolchain (rust-analyzer, rustfmt, clippy), installed via
 #           rustup, which behaves identically on every OS.
-#   Band 3  tools no package manager carries: tree-sitter, tmux-mem-cpu-load.
+#   Band 3  tools no package manager carries: tree-sitter, bazelisk,
+#           tmux-mem-cpu-load.
 #
 # A distribution that cannot supply the rest is the wrong distribution. This
 # script reports what is missing rather than working around it.
@@ -182,6 +183,35 @@ install_treesitter_cli() {
 }
 
 # ---------------------------------------------------------------------------
+# BAND 3c -- bazelisk, installed as 'bazel'. Each repo pins its Bazel release in
+# .bazelversion and bazelisk fetches that release on demand, so the version a
+# distribution packages is irrelevant. In brew on macOS (which also provides the
+# 'bazel' name); on Linux, track upstream's latest single-file release.
+# ---------------------------------------------------------------------------
+install_bazelisk() {
+  if installed bazelisk; then log "bazelisk present"; return; fi
+  if [ "$PM" = brew ]; then brew install bazelisk; return; fi
+  local arch
+  case "$(uname -m)" in
+    x86_64)        arch=amd64 ;;
+    aarch64|arm64) arch=arm64 ;;
+    *) warn "no bazelisk build for $(uname -m)"; return ;;
+  esac
+  log "installing latest bazelisk ($arch)"
+  local url="https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-$arch"
+  if curl -fsSL "$url" -o "$BIN/bazelisk.part"; then
+    chmod +x "$BIN/bazelisk.part"
+    mv "$BIN/bazelisk.part" "$BIN/bazelisk"
+    # $BIN precedes /usr/bin on PATH, so this shadows any packaged bazel.
+    ln -sf bazelisk "$BIN/bazel"
+    log "bazelisk $("$BIN/bazelisk" version 2>/dev/null | awk '/^Bazelisk/{print $NF}') installed"
+  else
+    warn "bazelisk download failed: $url"
+    rm -f "$BIN/bazelisk.part"
+  fi
+}
+
+# ---------------------------------------------------------------------------
 # BAND 2c -- tmux-mem-cpu-load (CPU%/mem/load for the tmux status bar). In brew
 # on macOS; not packaged for apt/dnf, so built from source on Linux, pinned to a
 # release tag and installed into ~/.local (no sudo). cmake is in the package
@@ -252,7 +282,7 @@ doctor() {
   local ok=1
   check_bash || ok=0
   for t in tmux nvim clangd clang-format ctags rg fd git curl make python3 gh \
-           rust-analyzer rustfmt tree-sitter tmux-mem-cpu-load; do
+           rust-analyzer rustfmt tree-sitter tmux-mem-cpu-load bazelisk; do
     if have "$t"; then
       report_tool "$t" "$(command -v "$t")" "" || ok=0
     elif [ -x "$BIN/$t" ]; then
@@ -270,6 +300,7 @@ main() {
   register_modern_bash
   install_rust_tools
   install_treesitter_cli
+  install_bazelisk
   install_tmux_mem_cpu_load
   doctor
   log "done."
