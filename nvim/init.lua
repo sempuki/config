@@ -380,10 +380,25 @@ local map = vim.keymap.set
 -- Jump to symbol by name (uses ctags)
 map("n", "<Leader>t", ":tjump ")
 
--- Generate ctags (per-language tag files)
-map("n", "<Leader>G+", ":!ctags -R -f cpp.tags --languages=C,C++ --c++-kinds=+p --fields-c++=+{properties} --fields=+aiS<CR>")
-map("n", "<Leader>Gpy", ":!ctags -R -f py.tags --languages=Python --python-kinds=-i --fields=+aiS<CR>")
-map("n", "<Leader>Grs", ":!ctags -R -f rs.tags --languages=Rust --fields=+aiS<CR>")
+-- Generate ctags (per-language tag files) from the project's own files: tracked
+-- files, submodules, and untracked files that are not ignored (or every file
+-- under the current directory outside a git repository). Listing the files
+-- instead of passing --languages avoids Universal Ctags 6.2 warning about its
+-- broken Cargo/TOML parser, and keeps build outputs such as bazel-* out.
+local function ctags(pattern, tag_file, options)
+  local files = "{ git ls-files --recurse-submodules && git ls-files -o --exclude-standard; } 2>/dev/null"
+    .. " || find . -type f"
+  vim.cmd("!(" .. files .. ") | grep -E '" .. pattern .. "' | ctags -L - -f " .. tag_file .. " " .. options)
+end
+map("n", "<Leader>G+", function()
+  ctags([[\.(c|cc|cpp|cxx|h|hh|hpp|ipp|tpp)$]], "cpp.tags", "--c++-kinds=+p --fields-c++=+{properties} --fields=+aiS")
+end)
+map("n", "<Leader>Gpy", function()
+  ctags([[\.py$]], "py.tags", "--python-kinds=-i --fields=+aiS")
+end)
+map("n", "<Leader>Grs", function()
+  ctags([[\.rs$]], "rs.tags", "--fields=+aiS")
+end)
 
 -- Save buffer
 map("n", "<Leader>w", "<Esc><C-c>:w<CR>", { silent = true })
